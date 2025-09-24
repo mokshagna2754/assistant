@@ -110,7 +110,23 @@ class OllamaResumeOptimizer:
             print(f"Warning: Could not verify model availability: {e}")
     
     async def analyze_resume(self, resume_content: str, job_description: Optional[str] = None) -> Dict[str, Any]:
-        """Comprehensive resume analysis using Ollama"""
+        """Comprehensive resume analysis using Ollama with fallback"""
+        
+        # Try AI analysis first, but fallback quickly if it fails
+        try:
+            return await asyncio.wait_for(
+                self._ai_analysis(resume_content, job_description), 
+                timeout=20.0  # 20 second timeout
+            )
+        except asyncio.TimeoutError:
+            print("AI analysis timed out, using fallback analysis")
+            return self._get_smart_fallback_analysis(resume_content, job_description)
+        except Exception as e:
+            print(f"AI analysis failed: {e}, using fallback")
+            return self._get_smart_fallback_analysis(resume_content, job_description)
+    
+    async def _ai_analysis(self, resume_content: str, job_description: Optional[str] = None) -> Dict[str, Any]:
+        """AI-powered analysis with Ollama"""
         
         analysis_prompt = f"""
         Analyze this resume comprehensively and provide detailed feedback:
