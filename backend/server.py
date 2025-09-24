@@ -189,7 +189,7 @@ class OllamaResumeOptimizer:
             except (json.JSONDecodeError, ValueError) as e:
                 print(f"JSON parsing error: {e}")
                 # Return default analysis if JSON parsing fails
-                return self._get_default_analysis(resume_content, job_description)
+                return self._get_smart_fallback_analysis(resume_content, job_description)
                 
         except Exception as e:
             print(f"Ollama analysis error: {e}")
