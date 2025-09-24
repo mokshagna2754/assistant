@@ -196,6 +196,22 @@ class OllamaResumeOptimizer:
             return self._get_smart_fallback_analysis(resume_content, job_description)
     
     async def generate_optimization_suggestions(self, resume_content: str, job_description: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Generate specific optimization suggestions with fallback"""
+        
+        # Try AI generation first with timeout
+        try:
+            return await asyncio.wait_for(
+                self._ai_suggestions(resume_content, job_description),
+                timeout=15.0  # 15 second timeout
+            )
+        except asyncio.TimeoutError:
+            print("AI suggestions timed out, using rule-based suggestions")
+            return self._get_smart_suggestions(resume_content, job_description)
+        except Exception as e:
+            print(f"AI suggestions failed: {e}, using fallback")
+            return self._get_smart_suggestions(resume_content, job_description)
+    
+    async def _ai_suggestions(self, resume_content: str, job_description: Optional[str] = None) -> List[Dict[str, Any]]:
         """Generate specific optimization suggestions"""
         
         optimization_prompt = f"""
