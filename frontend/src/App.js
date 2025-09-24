@@ -309,6 +309,123 @@ const AnalysisResults = ({ results, onOptimizeSection, currentTemplate, onGenera
         </div>
       )}
 
+      {/* Generate Optimized Resume Section */}
+      <div className="generate-section">
+        <div className="generate-header">
+          <h3>🚀 Generate Optimized Resume</h3>
+          <p>Let AI rewrite your resume with improvements while preserving your template structure</p>
+        </div>
+        
+        <div className="generate-actions">
+          <button 
+            className="generate-button"
+            onClick={handleGenerateOptimized}
+            disabled={isGenerating}
+            data-testid="generate-optimized-button"
+          >
+            {isGenerating ? (
+              <>
+                <div className="mini-spinner"></div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Zap className="icon" />
+                Generate Optimized Version
+              </>
+            )}
+          </button>
+          
+          {optimizedResume && (
+            <div className="download-actions">
+              <button 
+                className="download-button"
+                onClick={() => downloadResume(optimizedResume.optimized_resume, 'optimized-resume.txt')}
+                data-testid="download-optimized-button"
+              >
+                <Download className="icon" />
+                Download Optimized Resume
+              </button>
+              
+              <button 
+                className="playground-button"
+                onClick={() => setShowPlayground(!showPlayground)}
+                data-testid="toggle-playground-button"
+              >
+                <FileText className="icon" />
+                {showPlayground ? 'Hide' : 'Show'} Comparison
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Resume Playground/Comparison */}
+      {showPlayground && optimizedResume && (
+        <div className="resume-playground" data-testid="resume-playground">
+          <div className="playground-header">
+            <h3>📝 Resume Playground - Before vs After</h3>
+            <p>Compare your original resume with the AI-optimized version</p>
+          </div>
+          
+          <div className="resume-comparison">
+            <div className="resume-column original">
+              <div className="column-header">
+                <h4>📄 Original Resume</h4>
+                <button 
+                  className="download-btn-small"
+                  onClick={() => downloadResume(optimizedResume.original_resume, 'original-resume.txt')}
+                >
+                  <Download className="small-icon" />
+                  Download
+                </button>
+              </div>
+              <div className="resume-content">
+                <pre className="resume-text">{optimizedResume.original_resume}</pre>
+              </div>
+            </div>
+            
+            <div className="resume-column optimized">
+              <div className="column-header">
+                <h4>✨ Optimized Resume</h4>
+                <button 
+                  className="download-btn-small primary"
+                  onClick={() => downloadResume(optimizedResume.optimized_resume, 'optimized-resume.txt')}
+                >
+                  <Download className="small-icon" />
+                  Download
+                </button>
+              </div>
+              <div className="resume-content">
+                <pre className="resume-text optimized-text">{optimizedResume.optimized_resume}</pre>
+              </div>
+            </div>
+          </div>
+          
+          {/* Changes Summary */}
+          {optimizedResume.changes_made && optimizedResume.changes_made.length > 0 && (
+            <div className="changes-summary">
+              <h4>🔍 Key Changes Made</h4>
+              <div className="changes-list">
+                {optimizedResume.changes_made.slice(0, 5).map((change, index) => (
+                  <div key={index} className="change-item" data-testid={`change-${index}`}>
+                    <div className="change-line">Line {change.line_number}</div>
+                    <div className="change-content">
+                      <div className="change-before">
+                        <strong>Before:</strong> {change.original}
+                      </div>
+                      <div className="change-after">
+                        <strong>After:</strong> {change.optimized}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Optimization Suggestions */}
       {results.optimization_suggestions?.length > 0 && (
         <div className="suggestions-section">
