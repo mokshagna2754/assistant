@@ -67,7 +67,7 @@ class OptimizationSuggestion(BaseModel):
     original_text: str
     optimized_text: str
     reason: str
-    priority: str = Field(regex="^(high|medium|low)$")
+    priority: str = Field(pattern="^(high|medium|low)$")
 
 class AnalysisResponse(BaseModel):
     analysis_id: str
