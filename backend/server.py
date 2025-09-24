@@ -272,6 +272,57 @@ class OllamaResumeOptimizer:
             print(f"Optimization suggestion error: {e}")
             return []
     
+    def _get_smart_suggestions(self, resume_content: str, job_description: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Generate rule-based optimization suggestions"""
+        suggestions = []
+        
+        # Check for common improvements
+        if not any(word in resume_content.lower() for word in ['achieved', 'improved', 'increased', 'reduced']):
+            suggestions.append({
+                "section": "Professional Experience",
+                "original_text": "Work experience descriptions",
+                "optimized_text": "Add quantified achievements (e.g., 'Improved system performance by 40%')",
+                "reason": "Use action verbs and quantify your achievements to make your impact more compelling",
+                "priority": "high"
+            })
+        
+        if '@' not in resume_content:
+            suggestions.append({
+                "section": "Contact Information",
+                "original_text": "Missing contact details",
+                "optimized_text": "Add professional email address",
+                "reason": "Include complete contact information for ATS systems",
+                "priority": "high"
+            })
+        
+        if not any(word in resume_content.lower() for word in ['summary', 'objective', 'profile']):
+            suggestions.append({
+                "section": "Professional Summary",
+                "original_text": "Missing professional summary",
+                "optimized_text": "Add a compelling 2-3 sentence professional summary highlighting key skills and experience",
+                "reason": "Professional summary helps recruiters quickly understand your value proposition",
+                "priority": "medium"
+            })
+        
+        # Job-specific suggestions
+        if job_description:
+            job_lower = job_description.lower()
+            resume_lower = resume_content.lower()
+            
+            key_terms = ['api', 'database', 'cloud', 'agile', 'scrum', 'ci/cd', 'docker', 'kubernetes']
+            missing_terms = [term for term in key_terms if term in job_lower and term not in resume_lower]
+            
+            if missing_terms:
+                suggestions.append({
+                    "section": "Technical Skills",
+                    "original_text": "Current skills list",
+                    "optimized_text": f"Consider adding relevant skills: {', '.join(missing_terms[:3])}",
+                    "reason": "Include keywords from job description to improve ATS matching",
+                    "priority": "medium"
+                })
+        
+        return suggestions[:5]  # Limit to top 5 suggestions
+    
     def _get_smart_fallback_analysis(self, resume_content: str, job_description: Optional[str] = None) -> Dict[str, Any]:
         """Enhanced fallback analysis when AI processing fails"""
         import re
