@@ -521,6 +521,9 @@ const App = () => {
 
     setIsAnalyzing(true);
     setError(null);
+    
+    // Store job data for later use in optimization
+    sessionStorage.setItem('lastJobData', JSON.stringify(jobData));
 
     try {
       const formData = new FormData();
