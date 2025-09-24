@@ -640,6 +640,8 @@ const App = () => {
               <AnalysisResults 
                 results={analysisResults}
                 onOptimizeSection={handleOptimizeSection}
+                currentTemplate={currentTemplate}
+                onGenerateOptimized={() => {}}
               />
             </div>
           )}
