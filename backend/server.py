@@ -153,7 +153,7 @@ class OllamaResumeOptimizer:
                 options={
                     'temperature': 0.3,  # Lower for consistent analysis
                     'top_p': 0.9,
-                    'num_predict': 800
+                    'num_predict': 400  # Reduced for faster processing
                 }
             )
             
