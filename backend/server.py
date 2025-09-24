@@ -88,7 +88,7 @@ class TemplateInfo(BaseModel):
 
 # Ollama Service Class
 class OllamaResumeOptimizer:
-    def __init__(self, model_name="llama3.2"):
+    def __init__(self, model_name="llama3.2:1b"):
         self.model_name = model_name
         self.ensure_model_available()
     
