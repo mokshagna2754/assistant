@@ -186,13 +186,57 @@ const JobDescriptionInput = ({ onJobSubmit, isAnalyzing }) => {
   );
 };
 
-// Component to display analysis results
-const AnalysisResults = ({ results, onOptimizeSection }) => {
+// Component to display analysis results with playground
+const AnalysisResults = ({ results, onOptimizeSection, currentTemplate, onGenerateOptimized }) => {
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+  const [optimizedResume, setOptimizedResume] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showPlayground, setShowPlayground] = useState(false);
 
   if (!results) return null;
 
   const formatScore = (score) => Math.round(score * 100);
+
+  const handleGenerateOptimized = async () => {
+    setIsGenerating(true);
+    try {
+      const formData = new FormData();
+      formData.append('resume_text', currentTemplate.content);
+      
+      // Add job context if available
+      const jobData = sessionStorage.getItem('lastJobData');
+      if (jobData) {
+        const job = JSON.parse(jobData);
+        if (job.description) formData.append('job_description', job.description);
+        if (job.title) formData.append('job_title', job.title);
+        if (job.company) formData.append('company', job.company);
+      }
+
+      const response = await axios.post(`${API}/generate-optimized-resume`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setOptimizedResume(response.data);
+      setShowPlayground(true);
+    } catch (error) {
+      console.error('Optimization failed:', error);
+      alert('Failed to generate optimized resume. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const downloadResume = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="analysis-results" data-testid="analysis-results">
