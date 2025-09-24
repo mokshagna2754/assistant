@@ -193,7 +193,7 @@ class OllamaResumeOptimizer:
                 
         except Exception as e:
             print(f"Ollama analysis error: {e}")
-            return self._get_default_analysis(resume_content, job_description)
+            return self._get_smart_fallback_analysis(resume_content, job_description)
     
     async def generate_optimization_suggestions(self, resume_content: str, job_description: Optional[str] = None) -> List[Dict[str, Any]]:
         """Generate specific optimization suggestions"""
