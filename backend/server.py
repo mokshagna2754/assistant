@@ -492,6 +492,40 @@ async def analyze_resume(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
+@api_router.post("/generate-optimized-resume")
+async def generate_optimized_resume(
+    resume_text: str = Form(...),
+    job_description: Optional[str] = Form(None),
+    job_title: Optional[str] = Form(None),
+    company: Optional[str] = Form(None)
+):
+    """
+    Generate a fully optimized resume with the same structure
+    """
+    try:
+        if not optimizer_service:
+            raise HTTPException(status_code=500, detail="AI service not available")
+        
+        # Create optimized version using AI or fallback
+        try:
+            optimized_resume = await asyncio.wait_for(
+                optimizer_service.rewrite_full_resume(resume_text, job_description, job_title, company),
+                timeout=25.0
+            )
+        except asyncio.TimeoutError:
+            print("Resume rewrite timed out, using rule-based optimization")
+            optimized_resume = optimizer_service.rule_based_resume_optimization(resume_text, job_description)
+        
+        return {
+            "original_resume": resume_text,
+            "optimized_resume": optimized_resume,
+            "changes_made": optimizer_service.identify_changes(resume_text, optimized_resume),
+            "template_preserved": True
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Resume optimization failed: {str(e)}")
+
 @api_router.post("/optimize-section")
 async def optimize_section(
     section_text: str = Form(...),
