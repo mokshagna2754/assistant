@@ -323,6 +323,124 @@ class OllamaResumeOptimizer:
         
         return suggestions[:5]  # Limit to top 5 suggestions
     
+    async def rewrite_full_resume(self, resume_text: str, job_description: Optional[str] = None, job_title: Optional[str] = None, company: Optional[str] = None) -> str:
+        """AI-powered full resume rewrite while preserving structure"""
+        
+        job_context = ""
+        if job_description or job_title:
+            job_parts = []
+            if job_title: job_parts.append(f"Job Title: {job_title}")
+            if company: job_parts.append(f"Company: {company}")
+            if job_description: job_parts.append(f"Job Description: {job_description}")
+            job_context = "\n".join(job_parts)
+        
+        rewrite_prompt = f"""
+        Rewrite this resume to be more compelling and ATS-optimized while maintaining the exact same structure and format.
+        
+        ORIGINAL RESUME:
+        {resume_text}
+        
+        {f"TARGET JOB CONTEXT: {job_context}" if job_context else ""}
+        
+        INSTRUCTIONS:
+        1. Keep the exact same sections and order
+        2. Preserve the original formatting and structure
+        3. Enhance bullet points with stronger action verbs and quantified achievements
+        4. Add relevant keywords for ATS optimization
+        5. Make the language more impactful and professional
+        6. If targeting a specific job, incorporate relevant keywords naturally
+        7. Do not add new sections, only improve existing content
+        
+        Return ONLY the improved resume text, maintaining the original structure.
+        """
+        
+        try:
+            response = ollama.generate(
+                model=self.model_name,
+                prompt=rewrite_prompt,
+                options={
+                    'temperature': 0.3,
+                    'top_p': 0.9,
+                    'num_predict': 800
+                }
+            )
+            
+            optimized_text = response.get('response', resume_text).strip()
+            
+            # Ensure we maintain structure by checking if response is reasonable
+            if len(optimized_text) < len(resume_text) * 0.5:
+                return self.rule_based_resume_optimization(resume_text, job_description)
+            
+            return optimized_text
+            
+        except Exception as e:
+            print(f"AI resume rewrite failed: {e}")
+            return self.rule_based_resume_optimization(resume_text, job_description)
+    
+    def rule_based_resume_optimization(self, resume_text: str, job_description: Optional[str] = None) -> str:
+        """Rule-based resume optimization as fallback"""
+        lines = resume_text.split('\n')
+        optimized_lines = []
+        
+        # Keywords to add based on job description
+        target_keywords = []
+        if job_description:
+            job_lower = job_description.lower()
+            potential_keywords = ['python', 'javascript', 'machine learning', 'ai', 'data science', 
+                                'api', 'cloud', 'docker', 'kubernetes', 'react', 'tensorflow']
+            target_keywords = [kw for kw in potential_keywords if kw in job_lower and kw not in resume_text.lower()]
+        
+        for line in lines:
+            line_lower = line.lower().strip()
+            
+            # Enhance bullet points
+            if line.strip().startswith('•') or line.strip().startswith('-'):
+                # Improve action verbs
+                if line_lower.startswith('• worked') or line_lower.startswith('- worked'):
+                    line = line.replace('Worked', 'Collaborated').replace('worked', 'collaborated')
+                elif line_lower.startswith('• did') or line_lower.startswith('- did'):
+                    line = line.replace('Did', 'Executed').replace('did', 'executed')
+                elif line_lower.startswith('• made') or line_lower.startswith('- made'):
+                    line = line.replace('Made', 'Developed').replace('made', 'developed')
+                
+                # Add quantification where missing
+                if not any(char.isdigit() for char in line) and 'team' in line_lower:
+                    line = line.replace('team', 'cross-functional team of 5+')
+                
+            # Enhance technical skills section
+            elif 'skills' in line_lower and ':' in line and target_keywords:
+                # Add missing keywords to skills
+                if len(target_keywords) > 0:
+                    line += f", {', '.join(target_keywords[:3])}"
+            
+            # Enhance summary/objective
+            elif any(word in line_lower for word in ['summary', 'objective', 'profile']) and ':' not in line:
+                if target_keywords and 'experienced' in line_lower:
+                    # Insert relevant keywords naturally
+                    line = line.replace('experienced', f'experienced in {target_keywords[0]} and')
+            
+            optimized_lines.append(line)
+        
+        return '\n'.join(optimized_lines)
+    
+    def identify_changes(self, original: str, optimized: str) -> List[Dict[str, str]]:
+        """Identify changes between original and optimized resume"""
+        changes = []
+        
+        orig_lines = original.split('\n')
+        opt_lines = optimized.split('\n')
+        
+        for i, (orig_line, opt_line) in enumerate(zip(orig_lines, opt_lines)):
+            if orig_line.strip() != opt_line.strip() and opt_line.strip():
+                changes.append({
+                    "line_number": i + 1,
+                    "original": orig_line.strip(),
+                    "optimized": opt_line.strip(),
+                    "change_type": "enhancement"
+                })
+        
+        return changes[:10]  # Limit to first 10 changes
+    
     def _get_smart_fallback_analysis(self, resume_content: str, job_description: Optional[str] = None) -> Dict[str, Any]:
         """Enhanced fallback analysis when AI processing fails"""
         import re
